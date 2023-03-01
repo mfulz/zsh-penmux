@@ -8,8 +8,10 @@ source "${CURRENT_DIR}/zsh-penmux-defines.zsh"
 #
 # Aliases
 #
-alias pmuSS='penmux_start_session'
-alias pmuES='penmux_end_session'
+alias pmSS='penmux_start_session'
+alias pmES='penmux_end_session'
+alias pmNT='penmux_new_task'
+alias pmNA='penmux_new_action'
 
 #
 # Functions
@@ -34,6 +36,7 @@ penmux_start_session() {
     fi
 
     if [[ "${SESSION_EXISTS}" != "" ]]; then
+        _if_tmux && { >&2 echo "Tmux already running"; return 1 }
         tmux attach-session -t "${SESSION_NAME}"
     else
         tmux new-session -Ac "${WORK_DIR}" -s "${SESSION_NAME}" \; \
@@ -48,7 +51,25 @@ penmux_start_session() {
 penmux_end_session() {
     _if_tmux || { >&2 echo "No tmux session"; return 1 }
     _if_penmux_session || { >&2 echo "No penmux session"; return 1 }
+    local SESSION_NAME="$(_get_session_name)"
 
+    # stop logging if running on all panes
+    for _window in $(tmux list-windows -a -f "#{==:#{session_name},"${SESSION_NAME}"}" -F "#I"); do
+        tmux select-window -t "${_window}"
+        for _pane in $(tmux list-panes -F "#D"); do
+            tmux select-pane -t "${_pane}"
+            tmux run -t "${_pane}" "${TMUX_LOGGING_EXTENDED_TOGGLE_LOG} stop"
+        done
+    done
+    
+    # give script stop some time
+    for _pane in $(tmux list-panes -a -f "#{==:#{session_name},"${SESSION_NAME}"}" -F "#D"); do
+        tmux kill-pane -t "${_pane}"
+    done
+
+    # check if something is still left and kill
+    _if_tmux || { >&2 echo "No tmux session"; return 1 }
+    _if_penmux_session || { >&2 echo "No penmux session"; return 1 }
     tmux kill-session -t "$(_get_session_name)"
 }
 
