@@ -4,27 +4,37 @@
 #
 CURRENT_DIR=$(exec 2>/dev/null;cd -- $(dirname "$0"); unset PWD; /usr/bin/pwd || /bin/pwd || pwd)
 source "${CURRENT_DIR}/zsh-penmux-defines.zsh"
+source "${CURRENT_DIR}/zsh-penmux-shared.zsh"
 
 #
 # Aliases
 #
-alias pmSS='penmux_start_session'
+alias pmCS='penmux_create_session'
+alias pmAS='penmux_attach_session'
 alias pmES='penmux_end_session'
 alias pmNT='penmux_new_task'
 alias pmNA='penmux_new_action'
+alias pmTA='penmux_toggle_log_action'
+alias pmAA='penmux_add_log_action'
+alias pmDA='penmux_del_log_action'
+alias pmGA='penmux_get_log_action'
+alias pmTL='penmux_toggle_log'
+alias pmSL='penmux_start_log'
+alias pmEL='penmux_stop_log'
 
 #
 # Functions
 #
-penmux_start_session() {
+penmux_create_session() {
     local SESSION_NAME="$(date +"%Y%m%dT%H%M")"
     local TASK_NAME="ENUMERATION"
     local ACTION_NAME="SCAN"
     local WORK_DIR="$(pwd)"
+    local LOG=1
     local SESSION_EXISTS="$(_get_existing_session "${SESSION_NAME}")"
 
     local OPTIND o
-    while getopts "s:t:a:lh" o; do
+    while getopts "s:t:a:lnh" o; do
         case "${o}" in
             s)
                 SESSION_NAME="${OPTARG}"
@@ -38,6 +48,9 @@ penmux_start_session() {
             d)
                 WORK_DIR="$(_absolute_path "${OPTARG}")"
                 ;;
+            n)
+                LOG=0
+                ;;
             h)
                 echo "TODO: Help" && return 0
                 ;;
@@ -48,14 +61,48 @@ penmux_start_session() {
     done
 
     if [[ "${SESSION_EXISTS}" != "" ]]; then
-        _if_tmux && { >&2 echo "Tmux already running"; return 1 }
-        tmux attach-session -t "${SESSION_NAME}"
+        >&2 echo "Session already exists"; return 1 }
     else
-        tmux new-session -Ac "${WORK_DIR}" -s "${SESSION_NAME}" \; \
+        tmux new-session -dc "${WORK_DIR}" -s "${SESSION_NAME}" \; \
             set-option -q "@la-work-dir" "${WORK_DIR}" \; \
             set-environment PENMUX_SESSION "${SESSION_NAME}" \; \
+            set-environment PENMUX_LOG_ACTIONS "" \; \
             rename-window "${TASK_NAME}" \; \
             select-pane -T "${ACTION_NAME}"
+
+        if [[ "${LOG}" -ne 0 ]]; then
+            local LOG_ACTIONS=""
+            local _pane="$(tmux list-panes -a -f "#{==:#{session_name},"${SESSION_NAME}"}" -F "#D")"
+
+            tmux run -t "${_pane}" -C "set-environment PENMUX_LOG_ACTIONS "${_pane}""
+        fi
+    fi
+}
+
+penmux_attach_session() {
+    local SESSION_NAME="$(date +"%Y%m%dT%H%M")"
+    local SESSION_EXISTS="$(_get_existing_session "${SESSION_NAME}")"
+
+    local OPTIND o
+    while getopts "s:t:a:lnh" o; do
+        case "${o}" in
+            s)
+                SESSION_NAME="${OPTARG}"
+                ;;
+            h)
+                echo "TODO: Help" && return 0
+                ;;
+            *)
+                echo "TODO: Help" && return 1
+                ;;
+        esac
+    done
+
+    if [[ "${SESSION_EXISTS}" != "" ]]; then
+        _if_tmux && { >&2 echo "Tmux detected. Please exit first."; return 1 }
+        tmux attach-session -t "${SESSION_NAME}"
+    else
+        >&2 echo "Session not found: '${SESSION_NAME}'" && return 1
     fi
 }
 
@@ -65,12 +112,9 @@ penmux_end_session() {
     local SESSION_NAME="$(_get_session_name)"
 
     # stop logging if running on all panes
-    for _window in $(tmux list-windows -a -f "#{==:#{session_name},"${SESSION_NAME}"}" -F "#I"); do
-        tmux select-window -t "${_window}"
-        for _pane in $(tmux list-panes -F "#D"); do
-            tmux select-pane -t "${_pane}"
-            tmux run -t "${_pane}" "${TMUX_LOGGING_EXTENDED_TOGGLE_LOG} stop"
-        done
+    for _pane in $(tmux list-panes -a -f "#{==:#{session_name},"${SESSION_NAME}"}" -F "#D"); do
+        #tmux select-pane -t "${_pane}"
+        tmux run -t "${_pane}" "${TMUX_LOGGING_EXTENDED_TOGGLE_LOG} -a stop -p "${_pane}""
     done
     
     # give script stop some time
@@ -116,32 +160,44 @@ penmux_new_action() {
     penmux_set_action "${ACTION_NAME}"
 }
 
-#
-# Helper functions
-#
-_absolute_path() {
-    echo "$(cd "$(dirname -- "$1")" >/dev/null; pwd -P)/$(basename -- "$1")"
+penmux_toggle_log_action() {
+    local PANE_ID="$(_get_action_id)"
+
+    _in_tmux_env_list PENMUX_LOG_ACTIONS "${PANE_ID}" && _del_tmux_env_list PENMUX_LOG_ACTIONS "${PANE_ID}" || _add_tmux_env_list PENMUX_LOG_ACTIONS "${PANE_ID}"
 }
 
-_if_tmux() {
-    (( ${+TMUX} )) || return 1
+penmux_add_log_action() {
+    local PANE_ID="$(_get_action_id)"
+
+    _add_tmux_env_list PENMUX_LOG_ACTIONS "${PANE_ID}"
 }
 
-_if_penmux_session() {
-    tmux show-environment PENMUX_SESSION >/dev/null 2>&1 || return 1
+penmux_del_log_action() {
+    local PANE_ID="$(_get_action_id)"
+
+    _del_tmux_env_list PENMUX_LOG_ACTIONS "${PANE_ID}"
 }
 
-_get_task_name() {
-    # dont use directly
-    tmux display-message -p "#{window_name}"
+penmux_get_log_action() {
+    local PANE_ID="$(_get_action_id)"
+
+    _in_tmux_env_list PENMUX_LOG_ACTIONS "${PANE_ID}" && tmux display-message -d 5000 "penmux logging enabled" || tmux display-message -d 5000 "penmux logging disabled"
 }
 
-_get_session_name() {
-    # dont use directly
-    tmux display-message -p "#{session_name}"
+penmux_toggle_log() {
+    for _pane in $(_get_tmux_env_list PENMUX_LOG_ACTIONS); do
+        tmux run -t "${_pane}" "${TMUX_LOGGING_EXTENDED_TOGGLE_LOG} -p "${_pane}""
+    done
 }
 
-_get_existing_session() {
-    local SESSION_NAME="${1}"
-    tmux list-sessions -f "#{==:#{session_name},${SESSION_NAME}}" -F\#S
+penmux_start_log() {
+    for _pane in $(_get_tmux_env_list PENMUX_LOG_ACTIONS); do
+        tmux run -t "${_pane}" "${TMUX_LOGGING_EXTENDED_TOGGLE_LOG} -a start -p "${_pane}""
+    done
+}
+
+penmux_stop_log() {
+    for _pane in $(_get_tmux_env_list PENMUX_LOG_ACTIONS); do
+        tmux run -t "${_pane}" "${TMUX_LOGGING_EXTENDED_TOGGLE_LOG} -a stop -p "${_pane}""
+    done
 }
