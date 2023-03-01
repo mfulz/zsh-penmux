@@ -17,23 +17,35 @@ alias pmNA='penmux_new_action'
 # Functions
 #
 penmux_start_session() {
-    local SESSION_NAME="${1}"
-    local WORK_DIR="$(pwd)"
+    local SESSION_NAME="$(date +"%Y%m%dT%H%M")"
     local TASK_NAME="ENUMERATION"
     local ACTION_NAME="SCAN"
+    local WORK_DIR="$(pwd)"
     local SESSION_EXISTS="$(_get_existing_session "${SESSION_NAME}")"
 
-    if (( ${+2} )); then
-        WORK_DIR="$(_absolute_path "${2}")"
-    fi
-
-    if (( ${+3} )); then
-        TASK_NAME="${3}"
-    fi
-
-    if (( ${+4} )); then
-        ACTION_NAME="${4}"
-    fi
+    local OPTIND o
+    while getopts "s:t:a:lh" o; do
+        case "${o}" in
+            s)
+                SESSION_NAME="${OPTARG}"
+                ;;
+            t)
+                TASK_NAME="${OPTARG}"
+                ;;
+            a)
+                ACTION_NAME="${OPTARG}"
+                ;;
+            d)
+                WORK_DIR="$(_absolute_path "${OPTARG}")"
+                ;;
+            h)
+                echo "TODO: Help" && return 0
+                ;;
+            *)
+                echo "TODO: Help" && return 1
+                ;;
+        esac
+    done
 
     if [[ "${SESSION_EXISTS}" != "" ]]; then
         _if_tmux && { >&2 echo "Tmux already running"; return 1 }
@@ -43,8 +55,7 @@ penmux_start_session() {
             set-option -q "@la-work-dir" "${WORK_DIR}" \; \
             set-environment PENMUX_SESSION "${SESSION_NAME}" \; \
             rename-window "${TASK_NAME}" \; \
-            select-pane -T "${ACTION_NAME}" \; \
-            run ${TMUX_LOGGING_EXTENDED_TOGGLE_LOG}
+            select-pane -T "${ACTION_NAME}"
     fi
 }
 
