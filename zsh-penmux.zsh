@@ -100,14 +100,11 @@ penmux_attach_session() {
                 ;;
         esac
     done
-    local SESSION_EXISTS="$(_get_existing_session "${SESSION_NAME}")"
 
-    if [[ "${SESSION_EXISTS}" != "" ]]; then
-        _if_tmux && { >&2 echo "Tmux detected. Please exit first."; return 1 }
-        tmux attach-session -t "${SESSION_NAME}"
-    else
-        >&2 echo "Session not found: '${SESSION_NAME}'" && return 1
-    fi
+    _if_valid_session "${SESSION_NAME}" || { >&2 echo "Invalid session '${SESSION_NAME}'"; return 1 }
+    _if_tmux && { >&2 echo "Tmux detected. Please exit first."; return 1 }
+
+    tmux attach-session -t "${SESSION_NAME}"
 }
 
 penmux_end_session() {
@@ -127,26 +124,23 @@ penmux_end_session() {
                 ;;
         esac
     done
-    local SESSION_EXISTS="$(_get_existing_session "${SESSION_NAME}")"
 
-    if [[ "${SESSION_EXISTS}" != "" ]]; then
-        # stop logging if running on all panes
-        for _pane in $(tmux list-panes -a -f "#{==:#{session_name},"${SESSION_NAME}"}" -F "#D"); do
-            #tmux select-pane -t "${_pane}"
-            tmux run -t "${_pane}" "${TMUX_LOGGING_EXTENDED_TOGGLE_LOG} -a stop -p "${_pane}""
-        done
+    _if_valid_session "${SESSION_NAME}" || { >&2 echo "Invalid session '${SESSION_NAME}'"; return 1 }
+    
+    # stop logging if running on all panes
+    for _pane in $(tmux list-panes -a -f "#{==:#{session_name},"${SESSION_NAME}"}" -F "#D"); do
+        #tmux select-pane -t "${_pane}"
+        tmux run -t "${_pane}" "${TMUX_LOGGING_EXTENDED_TOGGLE_LOG} -a stop -p "${_pane}""
+    done
 
-        # give script stop some time
-        for _pane in $(tmux list-panes -a -f "#{==:#{session_name},"${SESSION_NAME}"}" -F "#D"); do
-            tmux kill-pane -t "${_pane}"
-        done
+    # give script stop some time
+    for _pane in $(tmux list-panes -a -f "#{==:#{session_name},"${SESSION_NAME}"}" -F "#D"); do
+        tmux kill-pane -t "${_pane}"
+    done
 
-        # check if something is still left and kill
-        SESSION_EXISTS="$(_get_existing_session "${SESSION_NAME}")"
-        if [[ "$SESSION_EXISTS" != "" ]]; then
-            tmux kill-session -t "${SESSION_NAME}"
-        fi
-    fi
+    # check if something is still left and kill
+    _if_valid_session "${SESSION_NAME}" || return 0
+    tmux kill-session -t "${SESSION_NAME}"
 }
 
 penmux_set_task() {
@@ -197,6 +191,7 @@ penmux_new_task() {
         SESSION_NAME="$(_get_session_name)"
     fi
 
+    _if_valid_session "${SESSION_NAME}" || { >&2 echo "Invalid session '${SESSION_NAME}'"; return 1 }
     _if_action_duplicate "${SESSION_NAME}" "${TASK_NAME}" "${ACTION_NAME}" || { >&2 echo "Action already exiting"; return 1 }
     local _pane="$(tmux new-window -t "${SESSION_NAME}" -n "${TASK_NAME}" -F "#D" -P)"
 
@@ -221,6 +216,7 @@ penmux_rename_action() {
         { >&2 echo "Invalid pand id. Session not found"; return 1 }
     fi
 
+    _if_valid_session "${SESSION_NAME}" || { >&2 echo "Invalid session '${SESSION_NAME}'"; return 1 }
     _if_action_duplicate_by_id "${PANE_ID}" "${ACTION_NAME}" || { >&2 echo "Action already exiting"; return 1 }
     tmux select-pane -t "${PANE_ID}" -T "${ACTION_NAME}"
 }
@@ -292,6 +288,7 @@ penmux_new_action() {
         TASK_ID="$(_get_task_id)"
     fi
 
+    _if_valid_session "${SESSION_NAME}" || { >&2 echo "Invalid session '${SESSION_NAME}'"; return 1 }
     _if_action_duplicate "${SESSION_NAME}" "${TASK_NAME}" "${ACTION_NAME}" || { >&2 echo "Action already exiting"; return 1 }
     _pane="$(tmux split-window ${=TMUX_FLAGS} -t "${TASK_ID}" -P -F "#D")"
     tmux select-pane -t "${_pane}" -T "${ACTION_NAME}"
@@ -314,6 +311,7 @@ penmux_toggle_log_action() {
         { >&2 echo "Invalid pand id. Session not found"; return 1 }
     fi
 
+    _if_valid_session "${SESSION_NAME}" || { >&2 echo "Invalid session '${SESSION_NAME}'"; return 1 }
     _in_tmux_env_list "${SESSION_NAME}" PENMUX_LOG_ACTIONS "${PANE_ID}" && _del_tmux_env_list "${SESSION_NAME}" PENMUX_LOG_ACTIONS "${PANE_ID}" || _add_tmux_env_list "${SESSION_NAME}" PENMUX_LOG_ACTIONS "${PANE_ID}"
 }
 
@@ -330,6 +328,7 @@ penmux_add_log_action() {
         { >&2 echo "Invalid pand id. Session not found"; return 1 }
     fi
 
+    _if_valid_session "${SESSION_NAME}" || { >&2 echo "Invalid session '${SESSION_NAME}'"; return 1 }
     _add_tmux_env_list "${SESSION_NAME}" PENMUX_LOG_ACTIONS "${PANE_ID}"
 }
 
@@ -346,6 +345,7 @@ penmux_del_log_action() {
         { >&2 echo "Invalid pand id. Session not found"; return 1 }
     fi
 
+    _if_valid_session "${SESSION_NAME}" || { >&2 echo "Invalid session '${SESSION_NAME}'"; return 1 }
     _del_tmux_env_list "${SESSION_NAME}" PENMUX_LOG_ACTIONS "${PANE_ID}"
 }
 
@@ -364,6 +364,7 @@ penmux_get_log_action() {
         { >&2 echo "Invalid pand id. Session not found"; return 1 }
     fi
 
+    _if_valid_session "${SESSION_NAME}" || { >&2 echo "Invalid session '${SESSION_NAME}'"; return 1 }
     if [[ "${STD_OUT}" -eq 0 ]]; then
         _in_tmux_env_list "${SESSION_NAME}" PENMUX_LOG_ACTIONS "${PANE_ID}" && tmux display-message -t "${SESSION_NAME}" -d 5000 "penmux logging enabled" || tmux display-message -t "${SESSION_NAME}" -d 5000 "penmux logging disabled"
     else
@@ -378,6 +379,7 @@ penmux_toggle_log() {
         SESSION_NAME="${1}"
     fi
 
+    _if_valid_session "${SESSION_NAME}" || { >&2 echo "Invalid session '${SESSION_NAME}'"; return 1 }
     for _pane in $(_get_tmux_env_list "${SESSION_NAME}" PENMUX_LOG_ACTIONS); do
         tmux run -t "${_pane}" "${TMUX_LOGGING_EXTENDED_TOGGLE_LOG} -p "${_pane}""
     done
@@ -390,6 +392,7 @@ penmux_start_log() {
         SESSION_NAME="${1}"
     fi
 
+    _if_valid_session "${SESSION_NAME}" || { >&2 echo "Invalid session '${SESSION_NAME}'"; return 1 }
     for _pane in $(_get_tmux_env_list "${SESSION_NAME}" PENMUX_LOG_ACTIONS); do
         tmux run -t "${_pane}" "${TMUX_LOGGING_EXTENDED_TOGGLE_LOG} -a start -p "${_pane}""
     done
@@ -402,6 +405,7 @@ penmux_stop_log() {
         SESSION_NAME="${1}"
     fi
 
+    _if_valid_session "${SESSION_NAME}" || { >&2 echo "Invalid session '${SESSION_NAME}'"; return 1 }
     for _pane in $(_get_tmux_env_list "${SESSION_NAME}" PENMUX_LOG_ACTIONS); do
         tmux run -t "${_pane}" "${TMUX_LOGGING_EXTENDED_TOGGLE_LOG} -a stop -p "${_pane}""
     done

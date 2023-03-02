@@ -170,3 +170,13 @@ _if_task_name_unique() {
     fi
     return 1
 }
+
+_if_valid_session() {
+    local SESSION_NAME="${1}"
+    local _check="$(tmux show-environment -t "${SESSION_NAME}" PENMUX_SESSION 2>/dev/null)"
+
+    if [[ "${_check}" == "PENMUX_SESSION=${SESSION_NAME}" ]]; then
+        return 0
+    fi
+    return 1
+}
