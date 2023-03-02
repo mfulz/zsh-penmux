@@ -5,6 +5,7 @@
 CURRENT_DIR=$(exec 2>/dev/null;cd -- $(dirname "$0"); unset PWD; /usr/bin/pwd || /bin/pwd || pwd)
 source "${CURRENT_DIR}/zsh-penmux-defines.zsh"
 source "${CURRENT_DIR}/zsh-penmux-shared.zsh"
+source "${CURRENT_DIR}/zsh-penmux-layout.zsh"
 
 if [[ -e "${CUSTOM_USER_FILE}" ]]; then
     source "${CUSTOM_USER_FILE}"
@@ -81,6 +82,49 @@ penmux_create_session() {
             tmux run -t "${_pane}" -C "set-environment PENMUX_LOG_ACTIONS "${_pane}""
         fi
     fi
+}
+
+penmux_start_layout_session() {
+    local SESSION_NAME=""
+    local LAYOUT_NAME=""
+
+    local OPTIND o
+    while getopts "s:l:" o; do
+        case "${o}" in
+            s)
+                SESSION_NAME="${OPTARG}"
+                ;;
+            l)
+                LAYOUT_NAME="${OPTARG}"
+                ;;
+            h)
+                echo "TODO: Help" && return 0
+                ;;
+            *)
+                echo "TODO: Help" && return 1
+                ;;
+        esac
+    done
+
+    local _layout_file="${CUSTOM_LAYOUTS}/${LAYOUT_NAME}.json"
+    if [[ ! -e "${_layout_file}" ]]; then
+        _layout_file="${PENMUX_LAYOUTS}/${LAYOUT_NAME}.json"
+    fi
+    if [[ ! -e "${_layout_file}" ]]; then
+        { >&2 echo "Layout not found"; return 1 }
+    fi
+
+    if [[ "${SESSION_NAME}" == "" ]]; then
+        { >&2 echo "Missing session name"; return 1 }
+    fi
+
+    local _sec_cmds="$(_layout_parse_tasks "${SESSION_NAME}" "${_layout_file}")"
+    for c in "${_sec_cmds}"; do
+        eval ${c} || return 1
+    done
+
+    penmux_start_log "${SESSION_NAME}"
+    penmux_attach_session -s "${SESSION_NAME}"
 }
 
 penmux_attach_session() {
