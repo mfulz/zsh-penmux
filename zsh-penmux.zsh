@@ -143,12 +143,60 @@ penmux_end_session() {
     tmux kill-session -t "${SESSION_NAME}"
 }
 
-penmux_set_task() {
-    _if_tmux || { >&2 echo "No tmux session"; return 1 }
-    _if_penmux_session || { >&2 echo "No penmux session"; return 1 }
-    local TASK_NAME="${1}"
+penmux_rename_task() {
+    local SESSION_NAME=""
+    local TASK_NAME=""
+    local TASK_ID=""
+    local NEW_TASK_NAME=""
 
-    tmux rename-window "${TASK_NAME}"
+    local OPTIND o
+    while getopts "s:t:i:n:" o; do
+        case "${o}" in
+            s)
+                SESSION_NAME="${OPTARG}"
+                ;;
+            t)
+                TASK_NAME="${OPTARG}"
+                ;;
+            i)
+                TASK_ID="${OPTARG}"
+                ;;
+            n)
+                NEW_TASK_NAME="${OPTARG}"
+                ;;
+            *)
+                echo "TODO: Help" && return 1
+                ;;
+        esac
+    done
+
+    if [[ "${NEW_TASK_NAME}" == "" ]]; then
+        { >&2 echo "New task name required"; return 1 }
+    fi
+
+    if [[ "${SESSION_NAME}" == "" ]]; then
+        _if_penmux_session || { >&2 echo "No penmux session"; return 1 }
+        SESSION_NAME="$(_get_session_name)"
+    fi
+
+    if [[ "${TASK_NAME}" != "" && "${TASK_ID}" != "" ]]; then
+        { >&2 echo "Specify either TASK_NAME or TASK_ID not both"; return 1 }
+    elif [[ "${TASK_NAME}" != "" ]]; then
+        _if_task_name_unique "${SESSION_NAME}" "${TASK_NAME}" || { >&2 echo "Task '${TASK_NAME}' not unique or not existing. Please specify TASK_ID."; return 1 }
+        TASK_ID="$(_get_task_id_by_name "${SESSION_NAME}" "${TASK_NAME}")"
+    elif [[ "${TASK_ID}" != "" ]]; then
+        TASK_NAME="$(_get_task_name_by_id "${TASK_ID}")"
+        _if_task_name_unique "${SESSION_NAME}" "${TASK_NAME}" || { >&2 echo "Task ID '${TASK_ID}' invalid."; return 1 }
+    else
+        _if_penmux_session || { >&2 echo "No penmux session"; return 1 }
+        TASK_NAME="$(_get_task_name)"
+        TASK_ID="$(_get_task_id)"
+    fi
+
+    _if_valid_session "${SESSION_NAME}" || { >&2 echo "Invalid session '${SESSION_NAME}'"; return 1 }
+    _if_action_duplicate_by_task "${SESSION_NAME}" "${NEW_TASK_NAME}" || { >&2 echo "Conflicting Action name"; return 1 }
+
+    tmux rename-window -t "${TASK_ID}" "${NEW_TASK_NAME}"
 }
 
 penmux_new_task() {

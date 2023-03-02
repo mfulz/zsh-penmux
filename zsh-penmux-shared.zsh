@@ -137,6 +137,15 @@ _in_tmux_env_list() {
     return ${ENTRY_EXISTS}
 }
 
+_if_action_duplicate_by_task() {
+    local SESSION_NAME="${1}"
+    local TASK_NAME="${2}"
+
+    for _swt in "$(tmux list-panes -aF "#S ${TASK_NAME} #T" -f "#{==:#S,${SESSION_NAME}}")"; do
+        _if_action_duplicate ${=_swt} || return 1
+    done
+}
+
 _if_action_duplicate_by_id() {
     local PANE_ID="${1}"
     local ACTION_NAME="${2}"
