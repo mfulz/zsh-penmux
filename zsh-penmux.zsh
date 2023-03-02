@@ -120,7 +120,7 @@ penmux_start_layout_session() {
 
     local _sec_cmds="$(_layout_parse_tasks "${SESSION_NAME}" "${_layout_file}")"
     for c in "${_sec_cmds}"; do
-        eval ${c} || return 1
+        eval ${c}
     done
 
     penmux_start_log "${SESSION_NAME}"
@@ -255,9 +255,10 @@ penmux_new_task() {
     local TASK_NAME=""
     local ACTION_NAME=""
     local LOG=1
+    local TMUX_FLAGS=""
 
     local OPTIND o
-    while getopts "s:t:a:n" o; do
+    while getopts "s:t:a:nd" o; do
         case "${o}" in
             s)
                 SESSION_NAME="${OPTARG}"
@@ -270,6 +271,9 @@ penmux_new_task() {
                 ;;
             n)
                 LOG=0
+                ;;
+            d)
+                TMUX_FLAGS="${TMUX_FLAGS} -d"
                 ;;
             *)
                 echo "TODO: Help" && return 1
@@ -292,7 +296,7 @@ penmux_new_task() {
 
     _if_valid_session "${SESSION_NAME}" || { >&2 echo "Invalid session '${SESSION_NAME}'"; return 1 }
     _if_action_duplicate "${SESSION_NAME}" "${TASK_NAME}" "${ACTION_NAME}" || { >&2 echo "Action already exiting"; return 1 }
-    local _pane="$(tmux new-window -t "${SESSION_NAME}" -n "${TASK_NAME}" -F "#D" -P)"
+    local _pane="$(tmux new-window ${=TMUX_FLAGS} -t "${SESSION_NAME}" -n "${TASK_NAME}" -F "#D" -P)"
 
     tmux select-pane -t "${_pane}" -T "${ACTION_NAME}"
 

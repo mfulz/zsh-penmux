@@ -5,6 +5,7 @@
             "name": "ENUMERATION",
             "action": "SCAN",
             "log": "yes",
+            "select": "SCAN",
             "actions":
             [
                 {
@@ -30,6 +31,7 @@
             "name": "EXPLOITATION",
             "action": "SCRATCHPAD",
             "log": "no",
+            "active": "no",
             "actions": []
         }
      ]
