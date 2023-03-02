@@ -6,6 +6,10 @@ CURRENT_DIR=$(exec 2>/dev/null;cd -- $(dirname "$0"); unset PWD; /usr/bin/pwd ||
 source "${CURRENT_DIR}/zsh-penmux-defines.zsh"
 source "${CURRENT_DIR}/zsh-penmux-shared.zsh"
 
+if [[ -e "${CUSTOM_USER_FILE}" ]]; then
+    source "${CUSTOM_USER_FILE}"
+fi
+
 #
 # Aliases
 #
@@ -107,25 +111,42 @@ penmux_attach_session() {
 }
 
 penmux_end_session() {
-    _if_tmux || { >&2 echo "No tmux session"; return 1 }
-    _if_penmux_session || { >&2 echo "No penmux session"; return 1 }
     local SESSION_NAME="$(_get_session_name)"
 
-    # stop logging if running on all panes
-    for _pane in $(tmux list-panes -a -f "#{==:#{session_name},"${SESSION_NAME}"}" -F "#D"); do
-        #tmux select-pane -t "${_pane}"
-        tmux run -t "${_pane}" "${TMUX_LOGGING_EXTENDED_TOGGLE_LOG} -a stop -p "${_pane}""
+    local OPTIND o
+    while getopts "s:t:a:lnh" o; do
+        case "${o}" in
+            s)
+                SESSION_NAME="${OPTARG}"
+                ;;
+            h)
+                echo "TODO: Help" && return 0
+                ;;
+            *)
+                echo "TODO: Help" && return 1
+                ;;
+        esac
     done
-    
-    # give script stop some time
-    for _pane in $(tmux list-panes -a -f "#{==:#{session_name},"${SESSION_NAME}"}" -F "#D"); do
-        tmux kill-pane -t "${_pane}"
-    done
+    local SESSION_EXISTS="$(_get_existing_session "${SESSION_NAME}")"
 
-    # check if something is still left and kill
-    _if_tmux || { >&2 echo "No tmux session"; return 1 }
-    _if_penmux_session || { >&2 echo "No penmux session"; return 1 }
-    tmux kill-session -t "$(_get_session_name)"
+    if [[ "${SESSION_EXISTS}" != "" ]]; then
+        # stop logging if running on all panes
+        for _pane in $(tmux list-panes -a -f "#{==:#{session_name},"${SESSION_NAME}"}" -F "#D"); do
+            #tmux select-pane -t "${_pane}"
+            tmux run -t "${_pane}" "${TMUX_LOGGING_EXTENDED_TOGGLE_LOG} -a stop -p "${_pane}""
+        done
+
+        # give script stop some time
+        for _pane in $(tmux list-panes -a -f "#{==:#{session_name},"${SESSION_NAME}"}" -F "#D"); do
+            tmux kill-pane -t "${_pane}"
+        done
+
+        # check if something is still left and kill
+        SESSION_EXISTS="$(_get_existing_session "${SESSION_NAME}")"
+        if [[ "$SESSION_EXISTS" != "" ]]; then
+            tmux kill-session -t "${SESSION_NAME}"
+        fi
+    fi
 }
 
 penmux_set_task() {
