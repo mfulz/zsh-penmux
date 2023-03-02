@@ -126,6 +126,8 @@ penmux_end_session() {
     done
 
     _if_valid_session "${SESSION_NAME}" || { >&2 echo "Invalid session '${SESSION_NAME}'"; return 1 }
+    local pane_self=""
+    _if_tmux && { _pane_self="$(_get_action_id)" }
     
     # stop logging if running on all panes
     for _pane in $(tmux list-panes -a -f "#{==:#{session_name},"${SESSION_NAME}"}" -F "#D"); do
@@ -135,8 +137,13 @@ penmux_end_session() {
 
     # give script stop some time
     for _pane in $(tmux list-panes -a -f "#{==:#{session_name},"${SESSION_NAME}"}" -F "#D"); do
-        tmux kill-pane -t "${_pane}"
+        if [[ "${_pane}" != "${_pane_self}" ]]; then
+            tmux kill-pane -t "${_pane}"
+        fi
     done
+    if [[ "${_pane_self}" != "" ]]; then
+        tmux kill-pane -t "${_pane}"
+    fi
 
     # check if something is still left and kill
     _if_valid_session "${SESSION_NAME}" || return 0
@@ -278,7 +285,7 @@ penmux_new_action() {
     local TMUX_FLAGS=""
 
     local OPTIND o
-    while getopts "s:t:i:a:nbdhv" o; do
+    while getopts "s:t:i:a:nbdhvf" o; do
         case "${o}" in
             s)
                 SESSION_NAME="${OPTARG}"
@@ -306,6 +313,9 @@ penmux_new_action() {
                 ;;
             v)
                 TMUX_FLAGS="${TMUX_FLAGS} -v"
+                ;;
+            f)
+                TMUX_FLAGS="${TMUX_FLAGS} -f"
                 ;;
             *)
                 echo "TODO: Help" && return 1

@@ -1,0 +1,36 @@
+{
+    "tasks":
+    [
+        {
+            "name": "ENUMERATION",
+            "action": "SCAN",
+            "log": "yes",
+            "actions":
+            [
+                {
+                    "action": "SCRATCHPAD",
+                    "log": "no",
+                    "split": "h",
+                    "switch": "yes"
+                },
+                {
+                    "action": "HOST1",
+                    "log": "yes",
+                    "split": "v",
+                    "switch": "yes"
+                },
+                {
+                    "action": "HOST2",
+                    "log": "yes",
+                    "split": "h"
+                }
+            ]
+        },
+        {
+            "name": "EXPLOITATION",
+            "action": "SCRATCHPAD",
+            "log": "no",
+            "actions": []
+        }
+     ]
+}
