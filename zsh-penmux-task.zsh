@@ -36,17 +36,13 @@ _penmux_task_create() {
         || return 1
 
     _penmux_args_find_session ${(kv)args} || return 1
-    _penmux_if_action_duplicate "${args[-session_name]}" "${args[-task_name]}" "${args[-action_name]}" && {
-        >&2 echo "Action '${args[-action_name]}' already exists"
-        return 1
-    }
+    _penmux_args_action_unique ${(kv)args} || return 1
 
     local _pane="$(tmux new-window ${=tmux_flags} -t "${args[-session_name]}" -n "${args[-task_name]}" -F "#D" -P)"
     tmux select-pane -t "${_pane}" -T "${args[-action_name]}"
 
-    if [[ "${no_log}" != "" ]]; then
-        # TODO: use action cmd
-        _add_tmux_env_list "${args[-session_name]}" PENMUX_LOG_ACTIONS "${_pane}"
+    if [[ "${no_log}" == "" ]]; then
+        _penmux_logger_add -s "${args[-session_name]}" -t "${args[-task_name]}" -j "${_pane}"
     fi
 }
 
@@ -60,12 +56,8 @@ _penmux_task_rename() {
 
     (($+args[-new_task_name])) || { >&2 echo "New task name '-n | --new_name' is required"; return 1 }
     _penmux_args_find_session ${(kv)args} || return 1
-    _penmus_args_find_task ${(kv)args} || return 1
-
-    _penmux_if_action_duplicate_by_task "${args[-session_name]}" "${args[-task_name]}" "${args[-action_name]}" && {
-        >&2 echo "Action '${args[-action_name]}' already exists"
-        return 1
-    }
+    _penmux_args_find_task ${(kv)args} || return 1
+    _penmux_args_action_unique ${(kv)args} || return 1
 
     tmux rename-window -t "${args[-task_id]}" "${args[-new_name]}"
 }
@@ -89,6 +81,13 @@ _penmux_get_task_name_by_id() {
     local _task_id="${1}"
 
     echo "$(tmux list-windows -aF "#W" -f "#{==:#{window_id},${_task_id}}")"
+}
+
+_penmux_get_task_id_by_name() {
+    local _session_name="${1}"
+    local _task_name="${2}"
+
+    echo "$(tmux list-windows -aF "#{window_id}" -f "#{==:#S#W,${_session_name}${_task_name}}")"
 }
 
 _penmux_get_task_name() {

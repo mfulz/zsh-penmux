@@ -9,6 +9,7 @@ source "${CURRENT_DIR}/zsh-penmux-args.zsh"
 source "${CURRENT_DIR}/zsh-penmux-action.zsh"
 source "${CURRENT_DIR}/zsh-penmux-session.zsh"
 source "${CURRENT_DIR}/zsh-penmux-task.zsh"
+source "${CURRENT_DIR}/zsh-penmux-logger.zsh"
 
 #
 # Main command
@@ -32,7 +33,7 @@ penmux() {
             _penmux_action ${@}
             ;;
         logger)
-            echo "logger"
+            _penmux_logger ${@}
             ;;
         *)
             { >&2 echo "Unknown command '${_cmd}' given"; return 1 }

@@ -42,17 +42,13 @@ _penmux_action_create() {
     (($+args[-action_name])) || { >&2 echo "Action '-a | --action' is required"; return 1 }
     _penmux_args_find_session ${(kv)args} || return 1
     _penmux_args_find_task ${(kv)args} || return 1
+    _penmux_args_action_unique ${(kv)args} || return 1
 
-    _penmux_if_action_duplicate "${args[-session_name]}" "${args[-task_name]}" "${args[-action_name]}" && {
-        >&2 echo "Action '${args[-action_name]}' already exists"
-        return 1
-    } 
     _pane="$(tmux split-window ${=tmux_flags} -t "${args[-task_id]}" -P -F "#D")"
     tmux select-pane -t "${_pane}" -T "${args[-action_name]}"
 
-    if [[ "${no_log}" != "" ]]; then
-        # TODO: rewrite
-        _add_tmux_env_list "${SESSION_NAME}" PENMUX_LOG_ACTIONS "${_pane}"
+    if [[ "${no_log}" == "" ]]; then
+        _penmux_logger_add -s "${args[-session_name]}" -i "${args[-task_id]}" -j "${_pane}"
     fi
 }
 
@@ -71,7 +67,7 @@ _penmux_action_rename() {
     fi
 
     _penmux_if_session_valid "${SESSION_NAME}" || { >&2 echo "Invalid session '${SESSION_NAME}'"; return 1 }
-    _penmux_if_action_duplicate_by_id "${PANE_ID}" "${ACTION_NAME}" && { >&2 echo "Action already exiting"; return 1 }
+    _penmux_args_action_unique ${(kv)args} || return 1
     tmux select-pane -t "${PANE_ID}" -T "${ACTION_NAME}"
 }
 
@@ -91,6 +87,20 @@ _penmux_if_action_duplicate() {
     return 0
 }
 
+_penmux_get_action_name_by_id() {
+    local _action_id="${1}"
+
+    echo "$(tmux list-panes -aF "#T" -f "#{==:#{pane_id},${_action_id}}")"
+}
+
+_penmux_get_action_id_by_name() {
+    local _session_name="${1}"
+    local _task_id="${2}"
+    local _action_name="${3}"
+
+    echo "$(tmux list-panes -aF "#{pane_id}" -f "#{==:#S#{window_id}#T,${_session_name}${_task_id}${_action_name}}")"
+}
+
 _penmux_if_action_duplicate_by_id() {
     local _pane_id="${1}"
     local _action_name="${2}"
@@ -104,5 +114,17 @@ _penmux_if_action_duplicate_by_task() {
     local _session_name="${1}"
     local _task_name="${2}"
 
-    _penmux_if_action_duplicate ${=_swt}
+    for _swt in "$(tmux list-panes -aF "#S ${_task_name} #T" -f "#{==:#S,${_session_name}}")"; do
+        _penmux_if_action_duplicate ${=_swt} || return 1
+    done
 }
+
+_penmux_get_action_name() {
+    # dont use directly
+    tmux display-message -p "#T"
+}
+
+_penmux_get_action_id() {
+    tmux display-message -p "#{pane_id}"
+}
+

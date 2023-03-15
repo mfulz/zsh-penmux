@@ -72,7 +72,7 @@ _penmux_session_create() {
 
         if [[ "${no_log}" == "" ]]; then
             local _pane="$(tmux list-panes -a -f "#{==:#{session_name},"${args[-session_name]}"}" -F "#D")"
-            tmux run -t "${_pane}" -C "set-environment PENMUX_LOG_ACTIONS "${_pane}""
+            _penmux_logger_add -s "${args[-session_name]}" -t "${args[-task_name]}" -j "${_pane}"
         fi
     }
 }
