@@ -62,14 +62,10 @@ _penmux_action_rename() {
         new_action_name: n:=new_action_name -new_name:=new_action_name \
         || return 1
 
-    (($+args[-new_action_name])) || { >&2 echo "New action name '-n | --new_name' is required"; return 1 }
     _penmux_args_find_session ${(kv)args} || return 1
     _penmux_args_find_task ${(kv)args} || return 1
     _penmux_args_find_action ${(kv)args} || return 1
-
-    local _action_name="${args[-action_name]}"
-    args[-action_name]="${args[-new_action_name]}"
-    _penmux_args_action_unique ${(kv)args} || return 1
+     _penmux_args_check_new_action ${(kv)args} || return 1
 
     tmux select-pane -t "${args[-action_id]}" -T "${args[-new_action_name]}"
 }
@@ -77,6 +73,19 @@ _penmux_action_rename() {
 #
 # Helper functions
 #
+_penmux_if_action_name_unique() {
+    local _session_name="${1}"
+    local _task_name="${2}"
+    local _action_name="${3}"
+
+    local _count=$(tmux list-panes -aF "#T" -f "#{==:#S#W#T,${_session_name}${_task_name}${_action_name}}" | wc -l)
+    
+    if [[ "${_count}" -eq 1 ]]; then
+        return 0
+    fi
+    return 1
+}
+
 _penmux_if_action_duplicate() {
     local _session_name="${1}"
     local _task_name="${2}"

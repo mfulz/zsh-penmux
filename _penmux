@@ -156,7 +156,7 @@ _comp_penmux_logger() {
 _comp_penmux_session_create() {
     local line state
 
-    _arguments \
+    _arguments -C \
         + '(session)' \
             {-s,--session}'[The name of the session.]:' \
         + '(work_dir)' \
@@ -176,7 +176,7 @@ _comp_penmux_session_create() {
 _comp_penmux_session_only() {
     local line state
 
-    _arguments \
+    _arguments -C \
         + '(session)' \
             {-s,--session}"[The name of the session.]:ses:($(_comp_penmux_sessions))"
 }
@@ -184,7 +184,7 @@ _comp_penmux_session_only() {
 _comp_penmux_task_create() {
     local line state
 
-    _arguments \
+    _arguments -C \
         + '(session)' \
             {-s,--session}"[The name of the session.]:ses:($(_comp_penmux_sessions))" \
         + '(task)' \
@@ -196,23 +196,23 @@ _comp_penmux_task_create() {
 _comp_penmux_task_rename() {
     local line state
 
-    _arguments \
+    _arguments -C \
         + '(session)' \
             {-s,--session}"[The name of the session.]:ses:($(_comp_penmux_sessions))" \
         + '(taskname)' \
             {-n,--new_name}'[The new name of the task.]:' \
         - task_set \
-            "(-t)--task[The name of the task.]:tas:($(_comp_penmux_tasks_name ${words[@]}))" \
-            "(--task)-t[The name of the task.]:tas:($(_comp_penmux_tasks_name ${words[@]}))" \
+            "(-t)--task[The name of the task.]:tas:($(_comp_penmux_tasks_name))" \
+            "(--task)-t[The name of the task.]:tas:($(_comp_penmux_tasks_name))" \
         - task_id_set \
-            "(-i)--task_id[The id of the task.]:tas:(($(_comp_penmux_tasks_id ${words[@]})))" \
-            "(--task_id)-i[The id of the task.]:tas:(($(_comp_penmux_tasks_id ${words[@]})))"
+            "(-i)--task_id[The id of the task.]:tas:(($(_comp_penmux_tasks_id)))" \
+            "(--task_id)-i[The id of the task.]:tas:(($(_comp_penmux_tasks_id)))"
 }
 
 _comp_penmux_action_create() {
     local line state
 
-    _arguments \
+    _arguments -C \
         "-b[Create new action left or above target action.]" \
         "-d[Don't make the new action become the active one.]" \
         "-f[Create new action spanning full window with or height.]" \
@@ -225,49 +225,49 @@ _comp_penmux_action_create() {
         + '(nolog)' \
             {-n,--no_log}"[Dont add action to logger.]" \
         - task_set \
-            "(-t)--task[The name of the task.]:tas:($(_comp_penmux_tasks_name ${words[@]}))" \
-            "(--task)-t[The name of the task.]:tas:($(_comp_penmux_tasks_name ${words[@]}))" \
+            "(-t)--task[The name of the task.]:tas:($(_comp_penmux_tasks_name))" \
+            "(--task)-t[The name of the task.]:tas:($(_comp_penmux_tasks_name))" \
         - task_id_set \
-            "(-i)--task_id[The id of the task.]:tas:(($(_comp_penmux_tasks_id ${words[@]})))" \
-            "(--task_id)-i[The id of the task.]:tas:(($(_comp_penmux_tasks_id ${words[@]})))"
+            "(-i)--task_id[The id of the task.]:tas:(($(_comp_penmux_tasks_id)))" \
+            "(--task_id)-i[The id of the task.]:tas:(($(_comp_penmux_tasks_id)))"
 }
 
 _comp_penmux_action_rename() {
     local line state
 
-    _arguments \
-        "(-t -i --task_id)--task[The name of the task.]:tas:($(_comp_penmux_tasks_name ${words[@]}))" \
-        "(--task -i --task_id)-t[The name of the task.]:tas:($(_comp_penmux_tasks_name ${words[@]}))" \
-        "(-i -t --task)--task_id[The id of the task.]:tas:(($(_comp_penmux_tasks_id ${words[@]})))" \
-        "(--task_id -t --task)-i[The id of the task.]:tas:(($(_comp_penmux_tasks_id ${words[@]})))" \
+    _arguments -C \
+        "(-t -i --task_id)--task[The name of the task.]:tas:($(_comp_penmux_tasks_name))" \
+        "(--task -i --task_id)-t[The name of the task.]:tas:($(_comp_penmux_tasks_name))" \
+        "(-i -t --task)--task_id[The id of the task.]:tas:(($(_comp_penmux_tasks_id)))" \
+        "(--task_id -t --task)-i[The id of the task.]:tas:(($(_comp_penmux_tasks_id)))" \
         + '(session)' \
             {-s,--session}"[The name of the session.]:ses:($(_comp_penmux_sessions))" \
         + '(actionname)' \
             {-n,--new_name}"[The new name of the action.]:" \
         - action_set \
-            "(-a)--action[The name of the action.]:act:($(_comp_penmux_actions_name ${words[@]}))" \
-            "(--action)-a[The name of the action.]:act:($(_comp_penmux_actions_name ${words[@]}))" \
+            "(-a)--action[The name of the action.]:act:($(_comp_penmux_actions_name))" \
+            "(--action)-a[The name of the action.]:act:($(_comp_penmux_actions_name))" \
         - action_id_set \
-            "(-j)--action_id[The id of the action.]:act:(($(_comp_penmux_actions_id ${words[@]})))" \
-            "(--action_id)-j[The id of the action.]:act:(($(_comp_penmux_actions_id ${words[@]})))"
+            "(-j)--action_id[The id of the action.]:act:(($(_comp_penmux_actions_id)))" \
+            "(--action_id)-j[The id of the action.]:act:(($(_comp_penmux_actions_id)))"
 }
 
 _comp_penmux_logger_action() {
     local line state
 
-    _arguments \
-        "(-t -i --task_id)--task[The name of the task.]:tas:($(_comp_penmux_tasks_name ${words[@]}))" \
-        "(--task -i --task_id)-t[The name of the task.]:tas:($(_comp_penmux_tasks_name ${words[@]}))" \
-        "(-i -t --task)--task_id[The id of the task.]:tas:(($(_comp_penmux_tasks_id ${words[@]})))" \
-        "(--task_id -t --task)-i[The id of the task.]:tas:(($(_comp_penmux_tasks_id ${words[@]})))" \
+    _arguments -C \
+        "(-t -i --task_id)--task[The name of the task.]:tas:($(_comp_penmux_tasks_name))" \
+        "(--task -i --task_id)-t[The name of the task.]:tas:($(_comp_penmux_tasks_name))" \
+        "(-i -t --task)--task_id[The id of the task.]:tas:(($(_comp_penmux_tasks_id)))" \
+        "(--task_id -t --task)-i[The id of the task.]:tas:(($(_comp_penmux_tasks_id)))" \
         + '(session)' \
             {-s,--session}"[The name of the session.]:ses:($(_comp_penmux_sessions))" \
         - action_set \
-            "(-a)--action[The name of the action.]:act:($(_comp_penmux_actions_name ${words[@]}))" \
-            "(--action)-a[The name of the action.]:act:($(_comp_penmux_actions_name ${words[@]}))" \
+            "(-a)--action[The name of the action.]:act:($(_comp_penmux_actions_name))" \
+            "(--action)-a[The name of the action.]:act:($(_comp_penmux_actions_name))" \
         - action_id_set \
-            "(-j)--action_id[The id of the action.]:act:(($(_comp_penmux_actions_id ${words[@]})))" \
-            "(--action_id)-j[The id of the action.]:act:(($(_comp_penmux_actions_id ${words[@]})))"
+            "(-j)--action_id[The id of the action.]:act:(($(_comp_penmux_actions_id)))" \
+            "(--action_id)-j[The id of the action.]:act:(($(_comp_penmux_actions_id)))"
 }
 
 _comp_penmux_layouts() {
@@ -296,12 +296,11 @@ _comp_penmux_sessions() {
 }
 
 _comp_penmux_tasks_name() {
-    set -A args ${@}
     local -a tasks
     local _session=""
 
     local stop=""
-    for v in ${args}; do
+    for v in ${words}; do
         if [[ "${v}" == "--session" || "${v}" == "-s" ]]; then
             stop="yes"
         else
@@ -326,12 +325,11 @@ _comp_penmux_tasks_name() {
 }
 
 _comp_penmux_tasks_id() {
-    set -A args ${@}
     local -a tasks
     local _session=""
 
     local stop=""
-    for v in ${args}; do
+    for v in ${words}; do
         if [[ "${v}" == "--session" || "${v}" == "-s" ]]; then
             stop="yes"
         else
@@ -356,14 +354,13 @@ _comp_penmux_tasks_id() {
 }
 
 _comp_penmux_actions_name() {
-    set -A args ${@}
     local -a actions
     local _session=""
     local _task=""
     local _task_id=""
 
     local stop=""
-    for v in ${args}; do
+    for v in ${words}; do
         if [[ "${v}" == "--session" || "${v}" == "-s" ]]; then
             stop="yes"
         else
@@ -375,7 +372,7 @@ _comp_penmux_actions_name() {
     done
 
     stop=""
-    for v in ${args}; do
+    for v in ${words}; do
         if [[ "${v}" == "--task" || "${v}" == "-t" ]]; then
             stop="yes"
         else
@@ -387,7 +384,7 @@ _comp_penmux_actions_name() {
     done
 
     stop=""
-    for v in ${args}; do
+    for v in ${words}; do
         if [[ "${v}" == "--task_id" || "${v}" == "-i" ]]; then
             stop="yes"
         else
@@ -419,14 +416,13 @@ _comp_penmux_actions_name() {
 }
 
 _comp_penmux_actions_id() {
-    set -A args ${@}
     local -a actions
     local _session=""
     local _task=""
     local _task_id=""
 
     local stop=""
-    for v in ${args}; do
+    for v in ${words}; do
         if [[ "${v}" == "--session" || "${v}" == "-s" ]]; then
             stop="yes"
         else
@@ -438,7 +434,7 @@ _comp_penmux_actions_id() {
     done
 
     stop=""
-    for v in ${args}; do
+    for v in ${words}; do
         if [[ "${v}" == "--task" || "${v}" == "-t" ]]; then
             stop="yes"
         else
@@ -450,7 +446,7 @@ _comp_penmux_actions_id() {
     done
 
     stop=""
-    for v in ${args}; do
+    for v in ${words}; do
         if [[ "${v}" == "--task_id" || "${v}" == "-i" ]]; then
             stop="yes"
         else

@@ -54,10 +54,9 @@ _penmux_task_rename() {
         new_task_name: n:=new_task_name -new_name:=new_task_name \
         || return 1
 
-    (($+args[-new_task_name])) || { >&2 echo "New task name '-n | --new_name' is required"; return 1 }
     _penmux_args_find_session ${(kv)args} || return 1
     _penmux_args_find_task ${(kv)args} || return 1
-    _penmux_args_action_unique ${(kv)args} || return 1
+    _penmux_args_check_new_task ${(kv)args} || return 1
 
     tmux rename-window -t "${args[-task_id]}" "${args[-new_task_name]}"
 }
@@ -72,6 +71,18 @@ _penmux_if_task_name_unique() {
     local _count=$(tmux list-windows -af "#{==:#S#W,${_session_name}${_task_name}}" | wc -l)
 
     if [[ "${_count}" -eq 1 ]]; then
+        return 0
+    fi
+    return 1
+}
+
+_penmux_if_task_exists() {
+    local _session_name="${1}"
+    local _task_name="${2}"
+
+    local _count=$(tmux list-windows -af "#{==:#S#W,${_session_name}${_task_name}}" | wc -l)
+
+    if [[ "${_count}" -eq 0 ]]; then
         return 0
     fi
     return 1
