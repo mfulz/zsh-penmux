@@ -179,7 +179,7 @@ _penmux_add_tmux_env_list() {
 
     _penmux_in_tmux_env_list "${_session_name}" "${_env_var}" "${_env_entry}" && return 0
 
-    _env_val="$(_get_tmux_env_val "${_session_name}" "${_env_var}")#${_env_entry}"
+    _env_val="$(_penmux_get_tmux_env_val "${_session_name}" "${_env_var}")#${_env_entry}"
     tmux set-environment -t "${_session_name}" "${_env_var}" "${_env_val}"
 }
 
