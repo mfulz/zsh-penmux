@@ -107,7 +107,7 @@ _penmux_session_destroy() {
     _penmux_args_find_session ${(kv)args} || return 1
 
     local pane_self=""
-    _penmux_if_tmux && { _pane_self="$(_get_action_id)" }
+    _penmux_if_tmux && { _pane_self="$(_penmux_get_action_id)" }
     
     # stop logging if running on all panes
     for _pane in $(tmux list-panes -a -f "#{==:#{session_name},"${args[-session_name]}"}" -F "#D"); do
