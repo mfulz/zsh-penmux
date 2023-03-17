@@ -1,0 +1,460 @@
+#compdef penmux
+
+local line state
+         
+_arguments -C \
+        "1: :->cmds" \
+        "*::arg:->args"
+
+case "${state}" in
+    cmds)
+        _values "penmux command" \
+                "session[Managing penmux sessions.]" \
+                "task[Managing penmux tasks.]" \
+                "action[Managing penmux actions.]" \
+                "logger[Managing penmux logger.]"
+        ;;
+    args)
+        case ${line[1]} in
+            session)
+                _comp_penmux_session
+                ;;
+            task)
+                _comp_penmux_task
+                ;;
+            action)
+                _comp_penmux_action
+                ;;
+            logger)
+                _comp_penmux_logger
+                ;;
+        esac
+        ;;
+esac
+
+_comp_penmux_session() {
+    local line state
+
+    _arguments -C \
+            "1: :->cmds" \
+            "*::arg:->args"
+
+    case "${state}" in
+        cmds)
+            _values "session command" \
+                    "create[Create a new penmux session.]" \
+                    "attach[Attach to a penmux session.]" \
+                    "destroy[Destroy a penmux session.]" \
+                    "list[List existing penmux sessions.]"
+            ;;
+        args)
+            case ${line[1]} in
+                create)
+                    _comp_penmux_session_create
+                    ;;
+                attach)
+                    _comp_penmux_session_only
+                    ;;
+                destroy)
+                    _comp_penmux_session_only
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+_comp_penmux_task() {
+    local line state
+
+    _arguments -C \
+            "1: :->cmds" \
+            "*::arg:->args"
+
+    case "${state}" in
+        cmds)
+            _values "task command" \
+                    "create[Create a new penmux task.]" \
+                    "rename[Rename a penmux task.]"
+            ;;
+        args)
+            case ${line[1]} in
+                create)
+                    _comp_penmux_task_create
+                    ;;
+                rename)
+                    _comp_penmux_task_rename
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+_comp_penmux_action() {
+    local line state
+
+    _arguments -C \
+            "1: :->cmds" \
+            "*::arg:->args"
+
+    case "${state}" in
+        cmds)
+            _values "action command" \
+                    "create[Create a new penmux action.]" \
+                    "rename[Rename a penmux action.]"
+            ;;
+        args)
+            case ${line[1]} in
+                create)
+                    _comp_penmux_action_create
+                    ;;
+                rename)
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+_comp_penmux_logger() {
+    local line state
+
+    _arguments -C \
+            "1: :->cmds" \
+            "*::arg:->args"
+
+    case "${state}" in
+        cmds)
+            _values "logger command" \
+                    "add[Add action to logger.]" \
+                    "remove[Remove action from logger.]" \
+                    "start[Start logging.]" \
+                    "stop[Stop logging.]" \
+                    "toggle[Toggle logging.]"
+            ;;
+        args)
+            case ${line[1]} in
+                add)
+                    _comp_penmux_logger_action
+                    ;;
+                remove)
+                    _comp_penmux_logger_action
+                    ;;
+                start)
+                    _comp_penmux_session_only
+                    ;;
+                stop)
+                    _comp_penmux_session_only
+                    ;;
+                toggle)
+                    _comp_penmux_session_only
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+_comp_penmux_session_create() {
+    local line state
+
+    _arguments \
+        + '(session)' \
+            {-s,--session}'[The name of the session.]:' \
+        + '(work_dir)' \
+            {-d,--work_dir}"[The working directory for the session]:cwd:_path_files -/" \
+        - manual_set \
+            '(-a)--action[The name of the initial action.]:' \
+            '(--action)-a[The name of the initial action.]:' \
+            '(-t)--task[The name of the initial task.]:' \
+            '(--task)-t[The name of the initial task.]:' \
+        - layout_set \
+            "(-l)--layout[The layout for creating the session.]:layout:($(_comp_penmux_layouts))" \
+            "(--layout)-l[The layout for creating the session.]:layout:($(_comp_penmux_layouts))"
+}
+
+_comp_penmux_session_only() {
+    local line state
+
+    _arguments \
+        + '(session)' \
+            {-s,--session}"[The name of the session.]:ses:($(_comp_penmux_sessions))"
+}
+
+_comp_penmux_task_create() {
+    local line state
+
+    _arguments \
+        + '(session)' \
+            {-s,--session}"[The name of the session.]:ses:($(_comp_penmux_sessions))" \
+        + '(task)' \
+            {-t,--task}'[The name of the new task.]:' \
+        + '(action)' \
+            {-a,--action}"[The name of the task's initial action.]:"
+}
+
+_comp_penmux_task_rename() {
+    local line state
+
+    _arguments \
+        + '(session)' \
+            {-s,--session}"[The name of the session.]:ses:($(_comp_penmux_sessions))" \
+        + '(taskname)' \
+            {-n,--new_name}'[The new name of the task.]:' \
+        - task_set \
+            "(-t)--task[The name of the task.]:tas:($(_comp_penmux_tasks_name ${words[@]}))" \
+            "(--task)-t[The name of the task.]:tas:($(_comp_penmux_tasks_name ${words[@]}))" \
+        - task_id_set \
+            "(-i)--task_id[The id of the task.]:tas:(($(_comp_penmux_tasks_id ${words[@]})))" \
+            "(--task_id)-i[The id of the task.]:tas:(($(_comp_penmux_tasks_id ${words[@]})))"
+}
+
+_comp_penmux_action_create() {
+    local line state
+
+    _arguments \
+        "-b[Create new action left or above target action.]" \
+        "-d[Don't make the new action become the active one.]" \
+        "-f[Create new action spanning full window with or height.]" \
+        "-h[Split horizontally.]" \
+        "-v[Split vertically.]" \
+        + '(session)' \
+            {-s,--session}"[The name of the session.]:ses:($(_comp_penmux_sessions))" \
+        + '(action)' \
+            {-a,--action}"[The name of the new action.]:" \
+        + '(nolog)' \
+            {-n,--no_log}"[Dont add action to logger.]" \
+        - task_set \
+            "(-t)--task[The name of the task.]:tas:($(_comp_penmux_tasks_name ${words[@]}))" \
+            "(--task)-t[The name of the task.]:tas:($(_comp_penmux_tasks_name ${words[@]}))" \
+        - task_id_set \
+            "(-i)--task_id[The id of the task.]:tas:(($(_comp_penmux_tasks_id ${words[@]})))" \
+            "(--task_id)-i[The id of the task.]:tas:(($(_comp_penmux_tasks_id ${words[@]})))"
+}
+
+_comp_penmux_logger_action() {
+    local line state
+
+    _arguments \
+        "(-t -i --task_id)--task[The name of the task.]:tas:($(_comp_penmux_tasks_name ${words[@]}))" \
+        "(--task -i --task_id)-t[The name of the task.]:tas:($(_comp_penmux_tasks_name ${words[@]}))" \
+        "(-i -t --task)--task_id[The id of the task.]:tas:(($(_comp_penmux_tasks_id ${words[@]})))" \
+        "(--task_id -t --task)-i[The id of the task.]:tas:(($(_comp_penmux_tasks_id ${words[@]})))" \
+        + '(session)' \
+            {-s,--session}"[The name of the session.]:ses:($(_comp_penmux_sessions))" \
+        - action_set \
+            "(-a)--action[The name of the action.]:act:($(_comp_penmux_actions_name ${words[@]}))" \
+            "(--action)-a[The name of the action.]:act:($(_comp_penmux_actions_name ${words[@]}))" \
+        - action_id_set \
+            "(-j)--action_id[The id of the action.]:act:(($(_comp_penmux_actions_id ${words[@]})))" \
+            "(--action_id)-j[The id of the action.]:act:(($(_comp_penmux_actions_id ${words[@]})))"
+}
+
+_comp_penmux_layouts() {
+    local -a layout_files layouts
+    layout_files=( "${PENMUX_LAYOUTS}"/*.json )
+    layout_files+=( "${CUSTOM_LAYOUTS}"/*.json )
+
+
+    for _file in ${layout_files}; do
+        local _layout=$_file:t:r
+        (( ${layouts[(I)"${_layout}"]} )) \
+            || layouts+=( $_file:t:r )
+    done
+
+    echo ${layouts}
+}
+
+_comp_penmux_sessions() {
+    local -a sessions
+
+    for _session in $(tmux list-sessions -F "#S"); do
+        _penmux_if_session_valid "${_session}" && { sessions+=( "${_session}" ) }
+    done
+
+    echo ${sessions}
+}
+
+_comp_penmux_tasks_name() {
+    set -A args ${@}
+    local -a tasks
+    local _session=""
+
+    local stop=""
+    for v in ${args}; do
+        if [[ "${v}" == "--session" || "${v}" == "-s" ]]; then
+            stop="yes"
+        else
+            if [[ "${stop}" == "yes" ]]; then
+                _session="${v}"
+                break
+            fi
+        fi
+    done
+
+    if [[ "${_session}" == "" ]]; then
+        echo ""
+        return
+    fi
+    _penmux_if_session_valid "${_session}" || { echo ""; return }
+
+    for _task in $(tmux list-windows -F "#W" -f "#{==:#S,${_session}}"); do
+        tasks+=( "${_task}" )
+    done
+
+    echo ${tasks}
+}
+
+_comp_penmux_tasks_id() {
+    set -A args ${@}
+    local -a tasks
+    local _session=""
+
+    local stop=""
+    for v in ${args}; do
+        if [[ "${v}" == "--session" || "${v}" == "-s" ]]; then
+            stop="yes"
+        else
+            if [[ "${stop}" == "yes" ]]; then
+                _session="${v}"
+                break
+            fi
+        fi
+    done
+
+    if [[ "${_session}" == "" ]]; then
+        echo ""
+        return
+    fi
+    _penmux_if_session_valid "${_session}" || { echo ""; return }
+
+    for _task in $(tmux list-windows -F '#{window_id}\:"Task #W"' -f "#{==:#S,${_session}}"); do
+        tasks+=( "${_task}" )
+    done
+
+    echo ${tasks}
+}
+
+_comp_penmux_actions_name() {
+    set -A args ${@}
+    local -a actions
+    local _session=""
+    local _task=""
+    local _task_id=""
+
+    local stop=""
+    for v in ${args}; do
+        if [[ "${v}" == "--session" || "${v}" == "-s" ]]; then
+            stop="yes"
+        else
+            if [[ "${stop}" == "yes" ]]; then
+                _session="${v}"
+                break
+            fi
+        fi
+    done
+
+    stop=""
+    for v in ${args}; do
+        if [[ "${v}" == "--task" || "${v}" == "-t" ]]; then
+            stop="yes"
+        else
+            if [[ "${stop}" == "yes" ]]; then
+                _task="${v}"
+                break
+            fi
+        fi
+    done
+
+    stop=""
+    for v in ${args}; do
+        if [[ "${v}" == "--task_id" || "${v}" == "-i" ]]; then
+            stop="yes"
+        else
+            if [[ "${stop}" == "yes" ]]; then
+                _task_id="${v}"
+                break
+            fi
+        fi
+    done
+
+    if [[ "${_session}" == "" ]]; then
+        echo ""
+        return
+    fi
+    _penmux_if_session_valid "${_session}" || { echo ""; return }
+
+    if [[ "${_task}" != "" ]]; then
+        for _action in $(tmux list-panes -a -F "#T" -f "#{==:#S#W,${_session}${_task}}"); do
+            echo "${_action}"
+            actions+=( "${_action}" )
+        done
+    elif [[ "${_task_id}" != "" ]]; then
+        for _action in $(tmux list-panes -a -F "#T" -f "#{==:#S#{window_id},${_session}${_task_id}}"); do
+            actions+=( "${_action}" )
+        done
+    fi
+
+    echo ${actions}
+}
+
+_comp_penmux_actions_id() {
+    set -A args ${@}
+    local -a actions
+    local _session=""
+    local _task=""
+    local _task_id=""
+
+    local stop=""
+    for v in ${args}; do
+        if [[ "${v}" == "--session" || "${v}" == "-s" ]]; then
+            stop="yes"
+        else
+            if [[ "${stop}" == "yes" ]]; then
+                _session="${v}"
+                break
+            fi
+        fi
+    done
+
+    stop=""
+    for v in ${args}; do
+        if [[ "${v}" == "--task" || "${v}" == "-t" ]]; then
+            stop="yes"
+        else
+            if [[ "${stop}" == "yes" ]]; then
+                _task="${v}"
+                break
+            fi
+        fi
+    done
+
+    stop=""
+    for v in ${args}; do
+        if [[ "${v}" == "--task_id" || "${v}" == "-i" ]]; then
+            stop="yes"
+        else
+            if [[ "${stop}" == "yes" ]]; then
+                _task_id="${v}"
+                break
+            fi
+        fi
+    done
+
+    if [[ "${_session}" == "" ]]; then
+        echo ""
+        return
+    fi
+    _penmux_if_session_valid "${_session}" || { echo ""; return }
+
+    if [[ "${_task}" != "" ]]; then
+        for _action in $(tmux list-panes -a -F '#D\:"Action #T"' -f "#{==:#S#W,${_session}${_task}}"); do
+            actions+=( "${_action}" )
+        done
+    elif [[ "${_task_id}" != "" ]]; then
+        for _action in $(tmux list-panes -a -F '#D\:"Action #T"' -f "#{==:#S#{window_id},${_session}${_task_id}}"); do
+            actions+=( "${_action}" )
+        done
+    fi
+
+    echo ${actions}
+}
+
+

@@ -51,7 +51,7 @@ _penmux_task_rename() {
         session_name: s:=session_name -session:=session_name \
         task_name: t:=task_name -task:=task_name \
         task_id: i:=task_id -task_id:=task_id \
-        new_task_name: n:=task_id -new_name:=new_task_name \
+        new_task_name: n:=new_task_name -new_name:=new_task_name \
         || return 1
 
     (($+args[-new_task_name])) || { >&2 echo "New task name '-n | --new_name' is required"; return 1 }
@@ -59,7 +59,7 @@ _penmux_task_rename() {
     _penmux_args_find_task ${(kv)args} || return 1
     _penmux_args_action_unique ${(kv)args} || return 1
 
-    tmux rename-window -t "${args[-task_id]}" "${args[-new_name]}"
+    tmux rename-window -t "${args[-task_id]}" "${args[-new_task_name]}"
 }
 
 #

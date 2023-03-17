@@ -20,6 +20,9 @@ _penmux_session() {
         destroy)
             _penmux_session_destroy ${@}
             ;;
+        list)
+            _penmux_session_list
+            ;;
         *)
             { >&2 echo "Unknown command '${_cmd}' given"; return 1 }
             ;;
@@ -124,6 +127,12 @@ _penmux_session_destroy() {
     # check if something is still left and kill
     _penmux_if_session_valid "${args[-session_name]}" || return 0
     tmux kill-session -t "${args[-session_name]}"
+}
+
+_penmux_session_list() {
+    for _session in $(tmux list-sessions -F "#S"); do
+        _penmux_if_session_valid "${_session}" && { echo "${_session}" }
+    done
 }
 
 #
