@@ -88,7 +88,7 @@ _penmux_session_attach() {
 
     (($+args[-session_name])) || { >&2 echo "Session '-s | --session' is required"; return 1 }
     _penmux_if_session_valid "${args[-session_name]}" || {
-        >&2 "Session '${args[-session_name]}' invalid"
+        >&2 echo "Session '${args[-session_name]}' invalid"
         return 1
     }
     _penmux_if_tmux && {
