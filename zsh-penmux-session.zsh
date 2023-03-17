@@ -57,8 +57,9 @@ _penmux_session_create() {
         if [[ ! -e "${_layout_file}" ]]; then
             { >&2 echo "Layout '${args[-layout]}' not found"; return 1 }
         fi
+        args[layout_file]="${_layout_file}"
 
-        local _sec_cmds=$(_penmux_layout_parse "${args[-session_name]}" "${_layout_file}")
+        local _sec_cmds=$(_penmux_layout_parse ${(kv)args})
         while IFS= read -r c; do
             eval "${c} || return 1"
         done < <(printf '%s\n' "${_sec_cmds}")

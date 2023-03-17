@@ -53,22 +53,25 @@ _penmux_action_create() {
 }
 
 _penmux_action_rename() {
-    local ACTION_NAME="${1}"
-    local SESSION_NAME="$(_get_session_name)"
-    local PANE_ID="$(_get_action_id)"
+    zparseopts -F -A args -M \
+        session_name: s:=session_name -session:=session_name \
+        task_name: t:=task_name -task:=task_name \
+        task_id: i:=task_id -task_id:=task_id \
+        action_name: a:=action_name -action:=action_name \
+        action_id: j:=action_id -action_id:=action_id \
+        new_action_name: n:=new_action_name -new_name:=new_action_name \
+        || return 1
 
-    if [[ "${2}" != "" ]]; then
-        PANE_ID="${2}"
-        SESSION_NAME="$(_get_session_name_by_pid "${PANE_ID}")"
-    fi
+    (($+args[-new_action_name])) || { >&2 echo "New action name '-n | --new_name' is required"; return 1 }
+    _penmux_args_find_session ${(kv)args} || return 1
+    _penmux_args_find_task ${(kv)args} || return 1
+    _penmux_args_find_action ${(kv)args} || return 1
 
-    if [[ "${SESSION_NAME}" == "" ]]; then
-        { >&2 echo "Invalid pand id. Session not found"; return 1 }
-    fi
-
-    _penmux_if_session_valid "${SESSION_NAME}" || { >&2 echo "Invalid session '${SESSION_NAME}'"; return 1 }
+    local _action_name="${args[-action_name]}"
+    args[-action_name]="${args[-new_action_name]}"
     _penmux_args_action_unique ${(kv)args} || return 1
-    tmux select-pane -t "${PANE_ID}" -T "${ACTION_NAME}"
+
+    tmux select-pane -t "${args[-action_id]}" -T "${args[-new_action_name]}"
 }
 
 #

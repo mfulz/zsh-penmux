@@ -47,10 +47,6 @@ _penmux_args_find_action() {
         >&2 echo "User either action name '-a | --action' or action id '-j | --action_id' not both"
         return 1
     elif (($+args[-action_name])); then
-        _penmux_args_action_unique ${(kv)args} || {
-            >&2 echo "Action '${args[-action_name]}' not unique or not existing"
-            return 1
-        }
         args[-action_id]="$(_penmux_get_action_id_by_name "${args[-session_name]}" "${args[-task_id]}" "${args[-action_name]}")"
     elif (($+args[-action_id])); then
         _penmux_args_action_unique ${(kv)args} || {

@@ -4,31 +4,34 @@
 #
 
 _penmux_layout_parse() {
-    local _session_name="${1}"
-    local _json_file="${2}"
+    set -A args ${(kv)@}
+    local _cs_cmd_flags=" --work_dir \"${args[-work_dir]}\""
 
-    local _task="$(jq ".tasks[0]" "${_json_file}")"
-    local _task_name="$(jq -r ".tasks[0].name" "${_json_file}")"
-    local _cs_cmd="penmux session create -s "${_session_name}" $(_penmux_layout_parse_flags "${_task}")"
-    echo "${_cs_cmd}"
+    local _task="$(jq ".tasks[0]" "${args[layout_file]}")"
+    local _task_name="$(jq -r ".tasks[0].name" "${args[layout_file]}")"
+    local _cs_cmd="penmux session create -s "${args[-session_name]}" $(_penmux_layout_parse_flags "${_task}")"
 
-    _penmux_layout_parse_actions "${_session_name}" "${_task}"
+    (($+args[-no_log])) && { _cs_cmd_flags="${_cs_cmd_flags} --no_log" }
 
-    local _task_select="$(jq -r ".tasks[0].select" "${_json_file}")"
+    echo "${_cs_cmd} ${_cs_cmd_flags}"
+
+    _penmux_layout_parse_actions "${args[-session_name]}" "${_task}"
+
+    local _task_select="$(jq -r ".tasks[0].select" "${args[layout_file]}")"
     if [[ "${_task_select}" != "" && "${_task_select}" != "null" ]]; then
-        echo "tmux select-pane -t \"\$(tmux list-panes -F \"#D\" -af \"#{==:#S#W#T,"${_session_name}${_task_name}${_task_select}"}\")\""
+        echo "tmux select-pane -t \"\$(tmux list-panes -F \"#D\" -af \"#{==:#S#W#T,"${args[-session_name]}${_task_name}${_task_select}"}\")\""
     fi
 
     local count=1
-    for _task_name in $(jq -r ".tasks[1:] | .[].name " "${_json_file}"); do
-        _task="$(jq ".tasks[$count]" "${_json_file}")"
-        local _nt_cmd="penmux task create -s "${_session_name}" $(_penmux_layout_parse_flags "${_task}")"
+    for _task_name in $(jq -r ".tasks[1:] | .[].name " "${args[layout_file]}"); do
+        _task="$(jq ".tasks[$count]" "${args[layout_file]}")"
+        local _nt_cmd="penmux task create -s "${args[-session_name]}" $(_penmux_layout_parse_flags "${_task}")"
         echo "${_nt_cmd}"
-        _penmux_layout_parse_actions "${_session_name}" "${_task}"
+        _penmux_layout_parse_actions "${args[-session_name]}" "${_task}"
 
-        local _task_select="$(jq ".tasks[0].select" "${_json_file}")"
+        local _task_select="$(jq ".tasks[0].select" "${args[layout_file]}")"
         if [[ "${_task_select}" != "" && "${_task_select}" != "null" ]]; then
-            echo "tmux select-pane -t \"\$(tmux list-panes -F \"#D\" -af \"#{==:#S#W#T,"${_session_name}${_task_name}${_task_select}"}\")\""
+            echo "tmux select-pane -t \"\$(tmux list-panes -F \"#D\" -af \"#{==:#S#W#T,"${args[-session_name]}${_task_name}${_task_select}"}\")\""
         fi
 
         (( count = count + 1 ))

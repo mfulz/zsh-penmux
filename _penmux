@@ -108,6 +108,7 @@ _comp_penmux_action() {
                     _comp_penmux_action_create
                     ;;
                 rename)
+                    _comp_penmux_action_rename
                     ;;
             esac
             ;;
@@ -160,6 +161,8 @@ _comp_penmux_session_create() {
             {-s,--session}'[The name of the session.]:' \
         + '(work_dir)' \
             {-d,--work_dir}"[The working directory for the session]:cwd:_path_files -/" \
+        + '(nolog)' \
+            {-n,--no_log}"[Dont add action to logger.]" \
         - manual_set \
             '(-a)--action[The name of the initial action.]:' \
             '(--action)-a[The name of the initial action.]:' \
@@ -227,6 +230,26 @@ _comp_penmux_action_create() {
         - task_id_set \
             "(-i)--task_id[The id of the task.]:tas:(($(_comp_penmux_tasks_id ${words[@]})))" \
             "(--task_id)-i[The id of the task.]:tas:(($(_comp_penmux_tasks_id ${words[@]})))"
+}
+
+_comp_penmux_action_rename() {
+    local line state
+
+    _arguments \
+        "(-t -i --task_id)--task[The name of the task.]:tas:($(_comp_penmux_tasks_name ${words[@]}))" \
+        "(--task -i --task_id)-t[The name of the task.]:tas:($(_comp_penmux_tasks_name ${words[@]}))" \
+        "(-i -t --task)--task_id[The id of the task.]:tas:(($(_comp_penmux_tasks_id ${words[@]})))" \
+        "(--task_id -t --task)-i[The id of the task.]:tas:(($(_comp_penmux_tasks_id ${words[@]})))" \
+        + '(session)' \
+            {-s,--session}"[The name of the session.]:ses:($(_comp_penmux_sessions))" \
+        + '(actionname)' \
+            {-n,--new_name}"[The new name of the action.]:" \
+        - action_set \
+            "(-a)--action[The name of the action.]:act:($(_comp_penmux_actions_name ${words[@]}))" \
+            "(--action)-a[The name of the action.]:act:($(_comp_penmux_actions_name ${words[@]}))" \
+        - action_id_set \
+            "(-j)--action_id[The id of the action.]:act:(($(_comp_penmux_actions_id ${words[@]})))" \
+            "(--action_id)-j[The id of the action.]:act:(($(_comp_penmux_actions_id ${words[@]})))"
 }
 
 _comp_penmux_logger_action() {
