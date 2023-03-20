@@ -42,6 +42,13 @@ _penmux_session_create() {
         || return 1
 
     (($+args[-session_name])) || { >&2 echo "Session '-s | --session' is required"; return 1 }
+
+    local _name_check="$(echo "${args[-session_name]}" | grep -e "[^A-Za-z0-9\-_]")"
+    if [[ "${_name_check}" != "" ]]; then
+        echo "Session name can only contain 'A-Za-z0-0-_' characters"
+        return 1
+    fi
+
     _penmux_if_session_exists "${args[-session_name]}" && {
         >&2 echo "Session '${args[-session_name]}' already exists";
         return 1
