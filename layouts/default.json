@@ -1,38 +1,36 @@
 {
-    "tasks":
-    [
+  "tasks": [
+    {
+      "name": "ENUMERATION",
+      "action": "SCAN",
+      "log": "yes",
+      "select": "SCAN",
+      "actions": [
         {
-            "name": "ENUMERATION",
-            "action": "SCAN",
-            "log": "yes",
-            "select": "SCAN",
-            "actions":
-            [
-                {
-                    "action": "SCRATCHPAD",
-                    "log": "no",
-                    "split": "h",
-                    "switch": "yes"
-                },
-                {
-                    "action": "HOST1",
-                    "log": "yes",
-                    "split": "v",
-                    "switch": "yes"
-                },
-                {
-                    "action": "HOST2",
-                    "log": "yes",
-                    "split": "h"
-                }
-            ]
+          "action": "SCRATCHPAD",
+          "log": "no",
+          "split": "h",
+          "switch": "yes"
         },
         {
-            "name": "EXPLOITATION",
-            "action": "SCRATCHPAD",
-            "log": "no",
-            "active": "no",
-            "actions": []
+          "action": "HOST1",
+          "log": "yes",
+          "split": "v",
+          "switch": "yes"
+        },
+        {
+          "action": "HOST2",
+          "log": "yes",
+          "split": "h"
         }
-     ]
+      ]
+    },
+    {
+      "name": "EXPLOITATION",
+      "action": "SCRATCHPAD",
+      "log": "no",
+      "active": "no",
+      "actions": []
+    }
+  ]
 }

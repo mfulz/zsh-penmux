@@ -48,6 +48,12 @@ _penmux_layout_parse_actions() {
         _action="$(echo "${_entry}" | jq -r ".actions[$count]")"
         local _na_cmd="penmux action create -s "${_session_name}" -t "${_task_name}" $(_penmux_layout_parse_flags "${_action}")"
         echo "${_na_cmd}"
+
+        local _action_select="$(echo "${_action}" | jq -r ".select")"
+        if [[ "${_action_select}" != "" && "${_action_select}" != "null" ]]; then
+          echo "tmux select-pane -t \"\$(tmux list-panes -F \"#D\" -af \"#{==:#S#W#T,"${_session_name}${_task_name}${_action_select}"}\")\""
+        fi
+
         (( count = count + 1))
     done
 }
@@ -135,9 +141,11 @@ _layout_parse_actions() {
     
     local count=0
     for _action in $(echo "${_entry}" | jq -r ".actions[].action"); do
+        echo "${_action}" >> /tmp/pm.txt
         _action="$(echo "${_entry}" | jq -r ".actions[$count]")"
         local _na_cmd="penmux_new_action -s "${SESSION_NAME}" -t "${_task_name}" $(_layout_parse_flags "${_action}")"
         echo "${_na_cmd}"
+
         (( count = count + 1))
     done
 }
