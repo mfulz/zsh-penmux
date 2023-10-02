@@ -1,0 +1,11 @@
+{
+  "tasks": [
+    {
+      "name": "__TARGET__",
+      "action": "__TOOL__",
+      "log": "yes",
+      "select": "__TOOL__",
+      "actions": []
+    }
+  ]
+}

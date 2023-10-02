@@ -39,6 +39,7 @@ _penmux_session_create() {
         action_name: a:=action_name -action:=action_name \
         work_dir: d:=work_dir -work_dir:=work_dir \
         layout: l:=layout -layout:=layout \
+        repl: r:=repl -repl:=repl \
         || return 1
 
     (($+args[-session_name])) || { >&2 echo "Session '-s | --session' is required"; return 1 }
@@ -68,7 +69,8 @@ _penmux_session_create() {
 
         local _sec_cmds=$(_penmux_layout_parse ${(kv)args})
         while IFS= read -r c; do
-            eval "${c} || return 1"
+          # echo "${c}"
+          eval "${c} || return 1"
         done < <(printf '%s\n' "${_sec_cmds}")
     } || {
         (($+args[-task_name])) || { >&2 echo "Task '-t | --task' is required"; return 1 }
@@ -103,6 +105,7 @@ _penmux_session_attach() {
         return 1
     }
 
+    _penmux_logger_start -s "${args[-session_name]}"
     tmux attach-session -t "${args[-session_name]}"
 }
 

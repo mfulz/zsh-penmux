@@ -65,7 +65,7 @@ _penmux_action_rename() {
     _penmux_args_find_session ${(kv)args} || return 1
     _penmux_args_find_task ${(kv)args} || return 1
     _penmux_args_find_action ${(kv)args} || return 1
-     _penmux_args_check_new_action ${(kv)args} || return 1
+    _penmux_args_check_new_action ${(kv)args} || return 1
 
     tmux select-pane -t "${args[-action_id]}" -T "${args[-new_action_name]}"
 }

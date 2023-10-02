@@ -71,6 +71,7 @@ _penmux_logger_start() {
         session_name: s:=session_name -session:=session_name \
         || return 1
 
+    # local _act_pane_id="$(tmux list-panes -F '#D' -af "#{==:#S1,"${session_name}#{pane_active}"}")"
 
     _penmux_args_find_session ${(kv)args} || return 1
     _penmux_args_find_task ${(kv)args} 2>/dev/null
@@ -88,6 +89,8 @@ _penmux_logger_start() {
     if [[ "${_self}" != "" ]]; then
         tmux run -t "${_self}" "${TMUX_LOGGING_EXTENDED_TOGGLE_LOG} -a start -p "${_self}""
     fi
+
+    # tmux select-pane -t "${_act_pane_id}"
 }
 
 _penmux_logger_stop() {
@@ -157,6 +160,84 @@ _penmux_get_tmux_env_val() {
 
     _env_val=("${(@s/=/)_env_var}")
     echo ${_env_val[2]}
+}
+
+_penmux_set_tmux_env_val() {
+    local _session_name="${1}"
+    local _env_var="${2}"
+    local _env_val="${3}"
+
+    tmux set-environment -t "${_session_name}" "${_env_var}" "${_env_val}"
+}
+
+_penmux_unset_tmux_env_val() {
+    local _session_name="${1}"
+    local _env_var="${2}"
+
+    tmux set-environment -t "${_session_name}" -u "${_env_var}"
+}
+
+_penmux_get_task_env_val() {
+    local _session_name="${1}"
+    local _task_name="${2}"
+    local _env_name="${3}"
+    local _env_var=""
+
+    tmux show-environment -t "${_session_name}" "${_task_name}:::${_env_name}" >/dev/null || return 1
+    _env_var="$(tmux show-environment -t "${_session_name}" "${_task_name}:::${_env_name}")"
+
+    _env_val=("${(@s/=/)_env_var}")
+    echo ${_env_val[2]}
+}
+
+_penmux_set_task_env_val() {
+    local _session_name="${1}"
+    local _task_name="${2}"
+    local _env_var="${3}"
+    local _env_val="${4}"
+
+    tmux set-environment -t "${_session_name}" "${_task_name}:::${_env_var}" "${_env_val}"
+}
+
+_penmux_unset_task_env_val() {
+    local _session_name="${1}"
+    local _task_name="${2}"
+    local _env_var="${3}"
+
+    tmux set-environment -t "${_session_name}" -u "${_task_name}:::${_env_var}"
+}
+
+_penmux_get_action_env_val() {
+    local _session_name="${1}"
+    local _task_name="${2}"
+    local _action_name="${3}"
+    local _env_name="${4}"
+    local _env_var=""
+
+    tmux show-environment -t "${_session_name}" "${_task_name}:::${_action_name}:::${_env_name}" >/dev/null || return 1
+    _env_var="$(tmux show-environment -t "${_session_name}" "${_task_name}:::${_action_name}:::${_env_name}")"
+
+    _env_val=("${(@s/=/)_env_var}")
+    echo ${_env_val[2]}
+}
+
+_penmux_set_task_env_val() {
+    local _session_name="${1}"
+    local _task_name="${2}"
+    local _action_name="${3}"
+    local _env_var="${4}"
+    local _env_val="${5}"
+
+    tmux set-environment -t "${_session_name}" "${_task_name}:::${_action_name}:::${_env_var}" "${_env_val}"
+}
+
+_penmux_unset_task_env_val() {
+    local _session_name="${1}"
+    local _task_name="${2}"
+    local _action_name="${3}"
+    local _env_var="${4}"
+
+    tmux set-environment -t "${_session_name}" -u "${_task_name}:::${_action_name}:::${_env_var}"
 }
 
 _penmux_get_tmux_env_list() {
