@@ -1,5 +1,7 @@
 # zsh-penmux
 
+**!!! This repo is dead as it was a dead end way: Check out [tmux-penmux](https://github.com/mfulz/tmux-penmux) for it's successor!!!**
+
 zsh-penmux is a session manager plugin for zsh. It is meant to be used for penetration testing sessions and tracking the terminal sessions to be used in reports.
 
 Features:
